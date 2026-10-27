@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Brake Pedal Monitoring System</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f3f4f6;
+      color: #111827;
+    }
+
+    header {
+      background: #111827;
+      color: white;
+      padding: 22px 15px;
+      text-align: center;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 26px;
+    }
+
+    header p {
+      margin: 7px 0 0;
+      color: #9ca3af;
+      font-size: 14px;
+    }
+
+    .connection {
+      margin-top: 10px;
+      font-size: 12px;
+    }
+
+    #connectionStatus {
+      color: #facc15;
+      font-weight: bold;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      margin: auto;
+      padding: 20px;
+    }
+
+    /* =========================
+       STATUS CARDS
+       ========================= */
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 22px 15px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    }
+
+    .card-title {
+      color: #6b7280;
+      font-size: 12px;
+      font-weight: bold;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .card-value {
+      font-size: 28px;
+      font-weight: bold;
+      overflow-wrap: anywhere;
+    }
+
+    .pressed {
+      color: #dc2626;
+    }
+
+    .released {
+      color: #16a34a;
+    }
+
+    /* =========================
+       BUTTONS
+       ========================= */
+
+    .action-panel {
+      background: white;
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: none;
+      border-radius: 8px;
+      padding: 14px 22px;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+      min-height: 48px;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .download-btn {
+      background: #2563eb;
+      color: white;
+    }
+
+    .clear-btn {
+      background: #dc2626;
+      color: white;
+    }
+
+    /* =========================
+       GRAPH
+       ========================= */
+
+    .graph-container {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    }
+
+    .section-title {
+      font-size: 19px;
+      margin: 0 0 18px;
+    }
+
+    .chart-wrapper {
+      position: relative;
+      width: 100%;
+      height: 380px;
+    }
+
+    /* =========================
+       TABLE
+       ========================= */
+
+    .table-container {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    }
+
+    .table-scroll {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    table {
+      width: 100%;
+      min-width: 650px;
+      border-collapse: collapse;
+    }
+
+    th {
+      background: #111827;
+      color: white;
+      padding: 12px 10px;
+      font-size: 13px;
+      text-align: center;
+    }
+
+    td {
+      padding: 12px 10px;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    tbody tr:hover {
+      background: #f9fafb;
+    }
+
+    .empty-message {
+      padding: 25px;
+      text-align: center;
+      color: #6b7280;
+    }
+
+    /* =========================
+       MOBILE
+       ========================= */
+
+    @media (max-width: 800px) {
+
+      header h1 {
+        font-size: 21px;
+      }
+
+      .container {
+        padding: 12px;
+      }
+
+      .status-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+
+      .card {
+        padding: 18px 8px;
+      }
+
+      .card-value {
+        font-size: 23px;
+      }
+
+      .chart-wrapper {
+        height: 320px;
+      }
+    }
+
+    @media (max-width: 480px) {
+
+      .container {
+        padding: 10px;
+      }
+
+      .status-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .card-title {
+        font-size: 10px;
+      }
+
+      .card-value {
+        font-size: 20px;
+      }
+
+      .action-buttons {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+
+      .graph-container,
+      .table-container,
+      .action-panel {
+        padding: 14px;
+      }
+
+      .chart-wrapper {
+        height: 280px;
+      }
+
+      .section-title {
+        font-size: 17px;
+      }
+    }
+
+  </style>
+</head>
+
+<body>
+
+<header>
+  <h1>Brake Pedal Monitoring System</h1>
+  <p>ESP32 + Firebase Realtime Database</p>
+
+  <div class="connection">
+    Firebase:
+    <span id="connectionStatus">CONNECTING...</span>
+  </div>
+</header>
+
+
+<div class="container">
+
+  <!-- STATUS -->
+
+  <div class="status-grid">
+
+    <div class="card">
+      <div class="card-title">Brake Status</div>
+      <div id="brakeStatus" class="card-value released">
+        RELEASED
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Total Brake Press</div>
+      <div id="totalPress" class="card-value">
+        0
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Latest Duration</div>
+      <div id="latestDuration" class="card-value">
+        0.00 s
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Average Duration</div>
+      <div id="averageDuration" class="card-value">
+        0.00 s
+      </div>
+    </div>
+
+  </div>
+
+
+  <!-- ACTION BUTTONS -->
+
+  <div class="action-panel">
+
+    <div class="action-buttons">
+
+      <button
+        id="downloadButton"
+        class="download-btn">
+        Download CSV
+      </button>
+
+      <button
+        id="clearButton"
+        class="clear-btn">
+        Clear Data
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <!-- GRAPH -->
+
+  <div class="graph-container">
+
+    <h2 class="section-title">
+      Brake Press Duration
+    </h2>
+
+    <div class="chart-wrapper">
+      <canvas id="brakeChart"></canvas>
+    </div>
+
+  </div>
+
+
+  <!-- HISTORY -->
+
+  <div class="table-container">
+
+    <h2 class="section-title">
+      Brake History
+    </h2>
+
+    <div class="table-scroll">
+
+      <table>
+
+        <thead>
+          <tr>
+            <th>Press</th>
+            <th>Date / Time</th>
+            <th>Duration (sec)</th>
+            <th>Duration (ms)</th>
+          </tr>
+        </thead>
+
+        <tbody id="historyTable">
+        </tbody>
+
+      </table>
+
+    </div>
+
+    <div
+      id="emptyMessage"
+      class="empty-message"
+      style="display:none;">
+      No brake data available.
+    </div>
+
+  </div>
+
+</div>
+
+
+<script type="module">
+
+  // ==================================================
+  // FIREBASE IMPORTS
+  // ==================================================
+
+  import {
+    initializeApp
+  }
+  from "https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+
+
+  import {
+    getDatabase,
+    ref,
+    onValue,
+    remove,
+    set
+  }
+  from "https://www.gstatic.com/firebasejs/12.4.0/firebase-database.js";
+
+
+  import {
+    getAuth,
+    signInAnonymously
+  }
+  from "https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
+
+
+  // ==================================================
+  // FIREBASE CONFIG
+  // ==================================================
+
+  const firebaseConfig = {
+
+    apiKey:
+      "AIzaSyAKpdccwlH8wMn6G2QJhBrrFMrxVmlYB1s",
+
+    authDomain:
+      "brake-monitor.firebaseapp.com",
+
+    databaseURL:
+      "https://brake-monitor-default-rtdb.asia-southeast1.firebasedatabase.app",
+
+    projectId:
+      "brake-monitor",
+
+    storageBucket:
+      "brake-monitor.firebasestorage.app",
+
+    messagingSenderId:
+      "453741909754",
+
+    appId:
+      "1:453741909754:web:f25e8c323f62fd8bdadb43"
+  };
+
+
+  // ==================================================
+  // INITIALIZE
+  // ==================================================
+
+  const app = initializeApp(firebaseConfig);
+
+  const database = getDatabase(app);
+
+  const auth = getAuth(app);
+
+
+  // ==================================================
+  // HTML
+  // ==================================================
+
+  const connectionStatus =
+    document.getElementById("connectionStatus");
+
+  const brakeStatus =
+    document.getElementById("brakeStatus");
+
+  const totalPress =
+    document.getElementById("totalPress");
+
+  const latestDuration =
+    document.getElementById("latestDuration");
+
+  const averageDuration =
+    document.getElementById("averageDuration");
+
+  const historyTable =
+    document.getElementById("historyTable");
+
+  const emptyMessage =
+    document.getElementById("emptyMessage");
+
+  const downloadButton =
+    document.getElementById("downloadButton");
+
+  const clearButton =
+    document.getElementById("clearButton");
+
+
+  // Store logs locally
+  let brakeLogs = [];
+
+
+  // ==================================================
+  // CHART
+  // ==================================================
+
+  const ctx =
+    document
+      .getElementById("brakeChart")
+      .getContext("2d");
+
+
+  const brakeChart =
+    new Chart(ctx, {
+
+      type: "line",
+
+      data: {
+
+        labels: [],
+
+        datasets: [{
+
+          label: "Duration (sec)",
+
+          data: [],
+
+          borderWidth: 2,
+
+          tension: 0.25,
+
+          pointRadius: 4,
+
+          pointHoverRadius: 7
+
+        }]
+      },
+
+
+      options: {
+
+        responsive: true,
+
+        maintainAspectRatio: false,
+
+        interaction: {
+          intersect: false,
+          mode: "index"
+        },
+
+        scales: {
+
+          x: {
+
+            title: {
+              display: true,
+              text: "Time"
+            },
+
+            ticks: {
+              maxRotation: 45,
+              minRotation: 0,
+              autoSkip: true,
+              maxTicksLimit: 10
+            }
+          },
+
+          y: {
+
+            beginAtZero: true,
+
+            title: {
+              display: true,
+              text: "Duration (seconds)"
+            }
+          }
+        }
+      }
+    });
+
+
+  // ==================================================
+  // FIREBASE LOGIN
+  // ==================================================
+
+  signInAnonymously(auth)
+
+    .then(() => {
+
+      console.log(
+        "Anonymous login successful"
+      );
+
+      connectionStatus.innerText =
+        "CONNECTED";
+
+      connectionStatus.style.color =
+        "#22c55e";
+
+      startFirebase();
+
+    })
+
+    .catch((error) => {
+
+      console.error(error);
+
+      connectionStatus.innerText =
+        "ERROR";
+
+      connectionStatus.style.color =
+        "#ef4444";
+
+    });
+
+
+  // ==================================================
+  // FIREBASE LISTENERS
+  // ==================================================
+
+  function startFirebase() {
+
+    // CURRENT STATUS
+
+    const currentRef =
+      ref(database, "current");
+
+
+    onValue(currentRef, (snapshot) => {
+
+      const data =
+        snapshot.val();
+
+
+      if (!data) {
+        return;
+      }
+
+
+      if (data.brakePressed === true) {
+
+        brakeStatus.innerText =
+          "PRESSED";
+
+        brakeStatus.className =
+          "card-value pressed";
+
+      }
+
+      else {
+
+        brakeStatus.innerText =
+          "RELEASED";
+
+        brakeStatus.className =
+          "card-value released";
+      }
+
+
+      totalPress.innerText =
+        Number(data.totalPress || 0);
+
+    });
+
+
+    // BRAKE LOGS
+
+    const logsRef =
+      ref(database, "brakeLogs");
+
+
+    onValue(logsRef, (snapshot) => {
+
+      const data =
+        snapshot.val();
+
+
+      if (!data) {
+
+        brakeLogs = [];
+
+        displayLogs();
+
+        return;
+      }
+
+
+      brakeLogs =
+        Object.entries(data)
+          .map(([key, value]) => ({
+
+            id: key,
+
+            ...value
+
+          }));
+
+
+      // Sort oldest -> newest
+
+      brakeLogs.sort(
+        (a, b) =>
+          Number(a.timestamp || 0) -
+          Number(b.timestamp || 0)
+      );
+
+
+      displayLogs();
+
+    });
+
+  }
+
+
+  // ==================================================
+  // DISPLAY DATA
+  // ==================================================
+
+  function displayLogs() {
+
+    // No data
+
+    if (brakeLogs.length === 0) {
+
+      latestDuration.innerText =
+        "0.00 s";
+
+      averageDuration.innerText =
+        "0.00 s";
+
+      brakeChart.data.labels = [];
+
+      brakeChart.data.datasets[0].data = [];
+
+      brakeChart.update();
+
+      historyTable.innerHTML = "";
+
+      emptyMessage.style.display =
+        "block";
+
+      return;
+    }
+
+
+    emptyMessage.style.display =
+      "none";
+
+
+    // ==================================================
+    // LATEST
+    // ==================================================
+
+    const latest =
+      brakeLogs[
+        brakeLogs.length - 1
+      ];
+
+
+    latestDuration.innerText =
+      Number(
+        latest.durationSec || 0
+      ).toFixed(3) + " s";
+
+
+    // ==================================================
+    // AVERAGE
+    // ==================================================
+
+    let totalDuration = 0;
+
+
+    brakeLogs.forEach(log => {
+
+      totalDuration +=
+        Number(
+          log.durationSec || 0
+        );
+
+    });
+
+
+    const average =
+      totalDuration /
+      brakeLogs.length;
+
+
+    averageDuration.innerText =
+      average.toFixed(3) + " s";
+
+
+    // ==================================================
+    // GRAPH
+    // ==================================================
+
+    brakeChart.data.labels =
+      brakeLogs.map(
+        log =>
+          formatGraphTime(
+            log.timestamp
+          )
+      );
+
+
+    brakeChart
+      .data
+      .datasets[0]
+      .data =
+      brakeLogs.map(
+        log =>
+          Number(
+            log.durationSec || 0
+          )
+      );
+
+
+    brakeChart.update();
+
+
+    // ==================================================
+    // TABLE
+    // ==================================================
+
+    historyTable.innerHTML = "";
+
+
+    const newestFirst =
+      [...brakeLogs].reverse();
+
+
+    newestFirst.forEach(log => {
+
+      const row =
+        document.createElement("tr");
+
+
+      row.innerHTML = `
+
+        <td>
+          ${log.pressNumber ?? "-"}
+        </td>
+
+        <td>
+          ${formatFullDate(log.timestamp)}
+        </td>
+
+        <td>
+          ${Number(
+            log.durationSec || 0
+          ).toFixed(3)}
+        </td>
+
+        <td>
+          ${Number(
+            log.durationMs || 0
+          )}
+        </td>
+
+      `;
+
+
+      historyTable.appendChild(row);
+
+    });
+
+  }
+
+
+  // ==================================================
+  // TIMESTAMP
+  // ==================================================
+
+  function normalizeTimestamp(timestamp) {
+
+    let ts =
+      Number(timestamp || 0);
+
+
+    // Convert seconds -> milliseconds
+    // if required
+
+    if (
+      ts > 0 &&
+      ts < 100000000000
+    ) {
+
+      ts *= 1000;
+
+    }
+
+
+    return ts;
+  }
+
+
+  function formatGraphTime(timestamp) {
+
+    const ts =
+      normalizeTimestamp(timestamp);
+
+
+    if (!ts) {
+      return "-";
+    }
+
+
+    const date =
+      new Date(ts);
+
+
+    return date.toLocaleTimeString(
+      "en-MY",
+      {
+
+        hour: "2-digit",
+
+        minute: "2-digit",
+
+        second: "2-digit",
+
+        hour12: false
+
+      }
+    );
+
+  }
+
+
+  function formatFullDate(timestamp) {
+
+    const ts =
+      normalizeTimestamp(timestamp);
+
+
+    if (!ts) {
+      return "-";
+    }
+
+
+    const date =
+      new Date(ts);
+
+
+    return date.toLocaleString(
+      "en-MY",
+      {
+
+        day: "2-digit",
+
+        month: "2-digit",
+
+        year: "numeric",
+
+        hour: "2-digit",
+
+        minute: "2-digit",
+
+        second: "2-digit",
+
+        hour12: false
+
+      }
+    );
+
+  }
+
+
+  // ==================================================
+  // DOWNLOAD CSV
+  // ==================================================
+
+  downloadButton.addEventListener(
+    "click",
+    () => {
+
+
+      if (brakeLogs.length === 0) {
+
+        alert(
+          "No brake data available."
+        );
+
+        return;
+      }
+
+
+      let csv =
+        "Press Number,Date Time,Timestamp,Duration ms,Duration sec\n";
+
+
+      brakeLogs.forEach(log => {
+
+        const press =
+          log.pressNumber ?? "";
+
+
+        const dateTime =
+          formatFullDate(
+            log.timestamp
+          );
+
+
+        const timestamp =
+          log.timestamp ?? "";
+
+
+        const durationMs =
+          log.durationMs ?? 0;
+
+
+        const durationSec =
+          Number(
+            log.durationSec || 0
+          ).toFixed(3);
+
+
+        csv +=
+          `${press},"${dateTime}",${timestamp},${durationMs},${durationSec}\n`;
+
+      });
+
+
+      // Create file
+
+      const blob =
+        new Blob(
+          [csv],
+          {
+            type:
+              "text/csv;charset=utf-8;"
+          }
+        );
+
+
+      const url =
+        URL.createObjectURL(blob);
+
+
+      const link =
+        document.createElement("a");
+
+
+      const now =
+        new Date();
+
+
+      const fileName =
+        "brake_data_" +
+        now.getFullYear() +
+        "-" +
+        String(
+          now.getMonth() + 1
+        ).padStart(2, "0") +
+        "-" +
+        String(
+          now.getDate()
+        ).padStart(2, "0") +
+        ".csv";
+
+
+      link.href = url;
+
+      link.download =
+        fileName;
+
+
+      document.body
+        .appendChild(link);
+
+
+      link.click();
+
+
+      document.body
+        .removeChild(link);
+
+
+      URL.revokeObjectURL(url);
+
+    }
+  );
+
+
+  // ==================================================
+  // CLEAR DATA
+  // ==================================================
+
+  clearButton.addEventListener(
+    "click",
+    async () => {
+
+
+      const confirmation =
+        confirm(
+          "Delete ALL brake history?\n\nThis action cannot be undone."
+        );
+
+
+      if (!confirmation) {
+        return;
+      }
+
+
+      clearButton.disabled =
+        true;
+
+      clearButton.innerText =
+        "Clearing...";
+
+
+      try {
+
+        // Delete logs
+
+        await remove(
+          ref(
+            database,
+            "brakeLogs"
+          )
+        );
+
+
+        // Reset total press
+
+        await set(
+          ref(
+            database,
+            "current/totalPress"
+          ),
+          0
+        );
+
+
+        alert(
+          "Brake data cleared successfully."
+        );
+
+      }
+
+      catch (error) {
+
+        console.error(error);
+
+        alert(
+          "Failed to clear data.\n\n" +
+          error.message
+        );
+
+      }
+
+      finally {
+
+        clearButton.disabled =
+          false;
+
+        clearButton.innerText =
+          "Clear Data";
+
+      }
+
+    }
+  );
+
+</script>
+
+</body>
+</html>
